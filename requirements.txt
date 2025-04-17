@@ -1,0 +1,8 @@
+opencv-python
+mediapipe
+openai
+whisper
+torch
+torchaudio
+numpy
+pyttsx3
