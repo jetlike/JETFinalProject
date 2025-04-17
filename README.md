@@ -17,7 +17,6 @@ This project enables a robot to recognize pointing gestures and respond to spoke
 
 ### 📁 Project Structure
 
-```text
 robot-vision-voice-mvp/
 ├── main.py               # Runs the full system
 ├── requirements.txt      # Python dependencies
@@ -38,4 +37,3 @@ robot-vision-voice-mvp/
 │   └── drawing.py            # Drawing helper functions
 │
 └── data/samples/         # Sample images/audio for testing
-```
