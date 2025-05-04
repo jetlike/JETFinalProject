@@ -18,7 +18,7 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 # Transcription and LLM modules
-from transcriber import Transcriber
+from audio.transcriber import Transcriber
 from llm.query_engine import QueryEngine
 
 class WakeWordListener:

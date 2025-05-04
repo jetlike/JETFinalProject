@@ -176,6 +176,23 @@ class FaceRecognitionSystem:
 
         cv2.destroyWindow("Name Input")
         return name
+    
+    def recognize_once(self, frame):
+        """
+        Given a BGR frame, return a registered name or "Unknown".
+        """
+        rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        locs = face_recognition.face_locations(rgb)
+        if not locs:
+            return "NoFace"
+        encs = face_recognition.face_encodings(rgb, locs)
+        enc = encs[0]
+        if self.known_faces:
+            dists = face_recognition.face_distance(self.known_faces, enc)
+            i = np.argmin(dists)
+            if dists[i] < 0.45:
+                return self.known_names[i]
+        return "Unknown"
 
 if __name__ == "__main__":
     system = FaceRecognitionSystem()
