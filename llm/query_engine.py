@@ -1,4 +1,7 @@
 import os
+from dotenv import load_dotenv
+load_dotenv()
+
 # Debug: check OPENAI_API_KEY presence
 env_key = os.getenv("OPENAI_API_KEY")
 if env_key:
