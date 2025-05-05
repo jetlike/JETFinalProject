@@ -18,7 +18,7 @@ class FaceRecognitionSystem:
         self.registration_mode = False
         self.current_name = ""
 
-        self.use_low_res = True  # Toggle resolution mode
+        self.use_low_res = True  # resolution mode
 
     def load_faces(self):
         if os.path.exists(self.db_file):
@@ -27,7 +27,6 @@ class FaceRecognitionSystem:
                     data = pickle.load(f)
                     self.known_faces = data['encodings']
                     self.known_names = data['names']
-                print(f"Loaded {len(self.known_names)} faces: {', '.join(self.known_names)}")
             except Exception as e:
                 print(f"Error loading face database: {e}")
 
@@ -84,12 +83,9 @@ class FaceRecognitionSystem:
             display_frame = frame.copy()
 
             if self.registration_mode:
-                cv2.putText(display_frame, f"Registering: {self.current_name}", (10, 30),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
-                cv2.putText(display_frame, "Press 'r' to capture", (10, 60),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
-                cv2.putText(display_frame, "Press 'c' to cancel", (10, 90),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+                cv2.putText(display_frame, f"Registering: {self.current_name}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+                cv2.putText(display_frame, "Press 'r' to capture", (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+                cv2.putText(display_frame, "Press 'c' to cancel", (10, 90), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
             else:
                 rgb_frame = cv2.cvtColor(scaled_frame, cv2.COLOR_BGR2RGB)
                 face_locations = face_recognition.face_locations(rgb_frame)
@@ -103,7 +99,7 @@ class FaceRecognitionSystem:
                         if distances[best_match_index] < 0.45:
                             name = self.known_names[best_match_index]
 
-                    # Scale back to original resolution
+                    # scale back to original resolution
                     top = int(top / scale_factor)
                     right = int(right / scale_factor)
                     bottom = int(bottom / scale_factor)
@@ -111,19 +107,14 @@ class FaceRecognitionSystem:
 
                     color = (0, 255, 0) if name != "Unknown" else (0, 0, 255)
                     cv2.rectangle(display_frame, (left, top), (right, bottom), color, 2)
-                    cv2.putText(display_frame, name, (left, top - 10),
-                                cv2.FONT_HERSHEY_SIMPLEX, 0.9, color, 2)
+                    cv2.putText(display_frame, name, (left, top - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, color, 2)
 
-                cv2.putText(display_frame, "Press 'n' to register new face", (10, 30),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
-                cv2.putText(display_frame, "Press 'l' to toggle resolution", (10, 60),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
-                cv2.putText(display_frame, "Press 'q' to quit", (10, 90),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+                cv2.putText(display_frame, "Press 'n' to register new face", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+                cv2.putText(display_frame, "Press 'l' to toggle resolution", (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+                cv2.putText(display_frame, "Press 'q' to quit", (10, 90), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
 
             if info_text:
-                cv2.putText(display_frame, info_text, (10, display_frame.shape[0] - 20),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 255), 2)
+                cv2.putText(display_frame, info_text, (10, display_frame.shape[0] - 20), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 255), 2)
 
             cv2.imshow("Face Recognition", display_frame)
 
@@ -139,8 +130,7 @@ class FaceRecognitionSystem:
                 info_text = message
                 if success:
                     self.registration_mode = False
-                    cv2.putText(display_frame, message, (10, display_frame.shape[0] - 20),
-                                cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+                    cv2.putText(display_frame, message, (10, display_frame.shape[0] - 20), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
                     cv2.imshow("Face Recognition", display_frame)
                     cv2.waitKey(2000)
             elif key == ord('c') and self.registration_mode:
@@ -159,10 +149,8 @@ class FaceRecognitionSystem:
 
         while True:
             input_prompt.fill(0)
-            cv2.putText(input_prompt, "Enter name (press Enter when done):", (20, 40),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
-            cv2.putText(input_prompt, name + "|", (20, 100),
-                        cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+            cv2.putText(input_prompt, "Enter name (press Enter when done):", (20, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+            cv2.putText(input_prompt, name + "|", (20, 100), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
 
             cv2.imshow("Name Input", input_prompt)
             key = cv2.waitKey(0) & 0xFF

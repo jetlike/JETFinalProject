@@ -2,20 +2,16 @@ from dotenv import load_dotenv
 load_dotenv()
 
 import os, time, cv2, pvporcupine
-from face.facial_recog   import FaceRecognitionSystem
-from audio.listener      import WakeWordListener
+from face.facial_recog import FaceRecognitionSystem
+from audio.listener import WakeWordListener
 from vision.hand_tracker import get_pointing_target
-from llm.query_engine    import QueryEngine
-import os
+from llm.query_engine import QueryEngine
+from face.facial_recog import FaceRecognitionSystem
 
 project_root = os.path.dirname(os.path.abspath(__file__))
 os.chdir(os.path.join(project_root, "face"))
-from face.facial_recog import FaceRecognitionSystem
-
-print("▶️ PICOVOICE_KEY =", os.getenv("PICOVOICE_KEY"))
 
 def authenticate_user(system: FaceRecognitionSystem, timeout: float = 30.0):
-    print(f"🔍 Known users: {system.known_names}")
     cap = cv2.VideoCapture(0, cv2.CAP_AVFOUNDATION)
     if not cap.isOpened():
         raise RuntimeError("Cannot open camera; check macOS Camera permissions.")
@@ -23,7 +19,6 @@ def authenticate_user(system: FaceRecognitionSystem, timeout: float = 30.0):
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
 
     start = time.time()
-    print("👤 Position yourself for authentication…")
     while True:
         if time.time() - start > timeout:
             cap.release()
@@ -36,7 +31,6 @@ def authenticate_user(system: FaceRecognitionSystem, timeout: float = 30.0):
         if name not in ("Unknown", "NoFace"):
             cap.release()
             cv2.destroyAllWindows()
-            print(f"✅ Authenticated as {name}")
             return name
         cv2.putText(frame, "Authenticating…", (10,30),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255,255,255), 2)
@@ -48,14 +42,11 @@ def authenticate_user(system: FaceRecognitionSystem, timeout: float = 30.0):
     raise RuntimeError("Authentication aborted.")
 
 def main():
-    # 1️⃣ Face-auth
     face_sys = FaceRecognitionSystem()
     user = authenticate_user(face_sys)
 
-    # 2️⃣ LLM engine
-    engine = QueryEngine(model="gpt-3.5-turbo", temperature=0.3)
+    engine = QueryEngine(model="gpt-4.1-nano-2025-04-14", temperature=0.3)
 
-    # 3️⃣ Try wake-word first
     use_manual = False
     listener = None
 
@@ -67,27 +58,22 @@ def main():
         )
         listener.porcupine  # force initialization
     except pvporcupine.PorcupineActivationLimitError:
-        print("⚠️  Picovoice key invalid/limit hit. Skipping wake-word → manual text entry.")
         use_manual = True
     except Exception as e:
-        print("⚠️  Porcupine init failed:", e, "\n→ Skipping wake-word.")
         use_manual = True
 
     if not use_manual:
         # real wake-word mode
         def on_wake():
-            print("\n🔔 Wake word detected!")
             wav = listener._record_with_threshold()
-            print(f"📝 Recorded to {wav}")
             txt = listener.transcriber.transcribe(wav)
-            print(f"💬 You said: {txt}")
             label, img_path = get_pointing_target()
             ans = engine.answer(
                 question=question,
                 context_text=f"User pointed at {label}",
                 image=img_path
             )
-            print(f"🤖 Bot: {ans}\n")
+            print(f"Bot: {ans}\n")
 
         listener.callback = on_wake
         listener.start()
@@ -96,7 +82,7 @@ def main():
             while True:
                 time.sleep(0.1)
         except KeyboardInterrupt:
-            print("\n👋 Shutting down…")
+            print("\nShutting down…")
         finally:
             listener.stop()
 
@@ -105,7 +91,7 @@ def main():
         print(f"\nSystem live for {user}. (Manual mode: type your question, or Ctrl+C to quit)\n")
         try:
             while True:
-                question = input("📢 Your question: ")
+                question = input("Please type your question: ")
                 if not question.strip():
                     continue
                 _, img_path = get_pointing_target()
@@ -113,9 +99,9 @@ def main():
                     question=question,
                     image=img_path
                 )          
-                print(f"🤖 Bot: {ans}\n")
+                print(f"Bot: {ans}\n")
         except KeyboardInterrupt:
-            print("\n👋 Goodbye!")
+            print("\nGoodbye!")
 
 if __name__ == "__main__":
     main()
