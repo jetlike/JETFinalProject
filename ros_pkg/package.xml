@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>ros_pkg</name>
+  <version>0.1.0</version>
+  <description>Wrappers for JETFinalProject as ROS2 nodes</description>
+  <maintainer email="jgunawan@utexas.edu">Jeffery Gunawan</maintainer>
+  <license>MIT</license>
+
+  <depend>rclpy</depend>
+  <depend>std_msgs</depend>
+  <depend>sensor_msgs</depend>
+  <depend>cv_bridge</depend>
+  <depend>vision_msgs</depend>  <!-- if you use custom msgs -->
+</package>
