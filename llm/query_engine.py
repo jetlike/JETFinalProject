@@ -36,7 +36,7 @@ class QueryEngine:
         answer = engine.answer("What time is it?", context_text="...")
     """
 
-    def __init__(self, model: str = "gpt-3.5-turbo", temperature: float = 0.3):
+    def __init__(self, model: str = "gpt-4.1-nano-2025-04-14", temperature: float = 0.3):
         api_key = ensure_openai_key()
         # Debug: confirm API key is loaded
         print(f"DEBUG: Loaded OPENAI_API_KEY={api_key[:8]}…", flush=True)
@@ -45,19 +45,28 @@ class QueryEngine:
         self.model = model
         self.temperature = temperature
 
-    def answer(self, question: str, context_text: str = None) -> str:
+    def answer(
+    self,
+    question: str,
+    image: str = None
+    ) -> str:
         """
-        Send the transcribed question (and optional context) to the LLM and return the answer.
-        Gracefully handles common errors such as insufficient quota or invalid model.
+        Send the question (and optional image path) to the LLM and return the answer.
         """
         messages = [
-            {"role": "system", "content": (
-                "You are a helpful robot assistant. "
-                "Use any provided context to answer user queries clearly and concisely."
-            )}
+            {
+                "role": "system",
+                "content": (
+                    "You are a helpful robot assistant. "
+                    "Use any provided image to answer user queries clearly and concisely."
+                )
+            }
         ]
-        if context_text:
-            messages.append({"role": "system", "content": f"Context: {context_text}"})
+        if image:
+            messages.append({
+                "role": "system",
+                "content": f"[Image for reference: {image}]"
+            })
         messages.append({"role": "user", "content": question})
 
         try:
@@ -68,10 +77,10 @@ class QueryEngine:
             )
             return response.choices[0].message.content
         except openai.OpenAIError as e:
-            code = getattr(e, 'code', None)
-            if code in ('insufficient_quota', 'rate_limit_exceeded'):
+            code = getattr(e, "code", None)
+            if code in ("insufficient_quota", "rate_limit_exceeded"):
                 return "⚠️ Sorry, I’ve hit my usage limit. Please check your OpenAI billing or try again later."
-            elif code == 'model_not_found':
+            elif code == "model_not_found":
                 return f"❌ The model '{self.model}' is unavailable."
             else:
                 return f"❌ OpenAI API error: {e}"

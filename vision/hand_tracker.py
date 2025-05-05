@@ -39,66 +39,64 @@ def is_pointing(hand_landmarks):
 
 def get_pointing_target(cooldown_secs=1.0):
     cap = cv2.VideoCapture(0)
-    label = "nothing"
-    crop_path = None
-    last_label = None
-    last_detect_time = 0
+    if not cap.isOpened():
+        raise RuntimeError("Cannot open camera")
 
     while True:
         ret, frame = cap.read()
         if not ret:
             break
 
+        # Run Mediapipe hand detection
         frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        result = hands.process(frame_rgb)
+        result    = hands.process(frame_rgb)
 
         if result.multi_hand_landmarks and result.multi_handedness:
-            score = result.multi_handedness[0].classification[0].score
-            if score < 0.9:
+            # Only consider high-confidence detections
+            if result.multi_handedness[0].classification[0].score < 0.9:
                 continue
 
-            for hand_landmarks in result.multi_hand_landmarks:
-                # if not is_pointing(hand_landmarks):
-                  #  continue
+            lm = result.multi_hand_landmarks[0]
+            h, w, _ = frame.shape
 
-                mp_draw.draw_landmarks(frame, hand_landmarks, mp_hands.HAND_CONNECTIONS)
+            # Compute wrist and index fingertip coords
+            cx_wrist = int(lm.landmark[mp_hands.HandLandmark.WRIST].x * w)
+            cy_wrist = int(lm.landmark[mp_hands.HandLandmark.WRIST].y * h)
+            cx_tip   = int(lm.landmark[mp_hands.HandLandmark.INDEX_FINGER_TIP].x * w)
+            cy_tip   = int(lm.landmark[mp_hands.HandLandmark.INDEX_FINGER_TIP].y * h)
 
-                index_tip = hand_landmarks.landmark[mp_hands.HandLandmark.INDEX_FINGER_TIP]
-                wrist = hand_landmarks.landmark[mp_hands.HandLandmark.WRIST]
-                h, w, _ = frame.shape
-                cx_tip, cy_tip = int(index_tip.x * w), int(index_tip.y * h)
-                cx_wrist, cy_wrist = int(wrist.x * w), int(wrist.y * h)
+            # Estimate depth and find target point
+            depth_map    = estimate_depth(frame)
+            target_point = find_pointed_object_in_depth(
+                depth_map,
+                wrist=(cx_wrist, cy_wrist),
+                fingertip=(cx_tip, cy_tip)
+            )
 
-                current_time = time.time()
-                if current_time - last_detect_time > cooldown_secs:
-                    depth_map = estimate_depth(frame)
-                    target_point = find_pointed_object_in_depth(
-                        depth_map,
-                        wrist=(cx_wrist, cy_wrist),
-                        fingertip=(cx_tip, cy_tip)
-                    )
+            if target_point:
+                # 1️⃣ skip if the hit is too close to your fingertip
+                dx = target_point[0] - cx_tip
+                dy = target_point[1] - cy_tip
+                if (dx*dx + dy*dy) < (100**2):   # e.g. 100px radius
+                    continue
+                
+                # Crop, save, and immediately return
+                label, path = crop_from_depth_target(frame, target_point)
+                cap.release()
+                cv2.destroyAllWindows()
+                return label, path
 
-                    if target_point:
-                        candidate_label, candidate_path = crop_from_depth_target(
-                            frame,
-                            target_point=target_point
-                        )
+            # Optional: draw feedback
+            mp_draw.draw_landmarks(frame, lm, mp_hands.HAND_CONNECTIONS)
+            cv2.circle(frame, (cx_tip, cy_tip), 8, (0,255,0), -1)
 
-                        if candidate_label != last_label:
-                            label = candidate_label
-                            crop_path = candidate_path
-                            last_label = label
-                            last_detect_time = current_time
-
-                cv2.circle(frame, (cx_tip, cy_tip), 10, (0, 255, 0), -1)
-
-        cv2.putText(frame, f"Locked on: {label}", (10, 30),
-                    cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+        # Always show live feed so user can align
         cv2.imshow("Vision - Press Q to exit", frame)
-
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
+    # Cleanup if loop ends without a crop
     cap.release()
     cv2.destroyAllWindows()
-    return label, crop_path
+    return "nothing", None
+
